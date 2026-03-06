@@ -26,7 +26,7 @@ Tired of `cd`-ing through endless directory trees to find your projects?
 - **Auto-expanding folders** (shows subdirectories when parent has no files)
 - **Simple Bash script — minimal dependencies**
 
-![demo](./demo.png)
+![demo](./demo.jpg)
 
 ---
 
