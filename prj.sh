@@ -6,14 +6,15 @@ PROJ_PATH="${PROJ_PATH:-${HOME}/projets}"
 
 # === Helpers ===
 unique_name() {
-  local base="$1" candidate="$base" i=2
+  local base="$1"
+  local candidate="$base"
+  local i=1
   while [[ -d "$PROJ_PATH/$candidate" ]]; do
     candidate="${base}-$i"
     ((i++))
   done
   echo "$candidate"
 }
-
 get_modified_epoch() {
   local dir="$1"
   if stat --version >/dev/null 2>&1; then
