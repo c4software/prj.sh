@@ -15,12 +15,18 @@ unique_name() {
   done
   echo "$candidate"
 }
+
 get_modified_epoch() {
   local dir="$1"
-  if stat --version >/dev/null 2>&1; then
-    stat -c %Y "$dir" 2>/dev/null
+
+  # Search for the git file (if exists), to sort projects by recents update.
+  # get COMMIT_EDITMSG is updated when PULL/COMMIT/CHECKOUT/Fetch.
+  # If the folder is not a git project then fall back to the folder him self.
+  if [[ -d "$dir/.git" ]]; then
+    find "$dir/.git/refs" "$dir/.git/COMMIT_EDITMSG" -type f \
+      -printf '%T@\n' 2>/dev/null | sort -rn | head -n1 | cut -d. -f1
   else
-    stat -f %m "$dir" 2>/dev/null
+    stat -c %Y "$dir" 2>/dev/null
   fi
 }
 
