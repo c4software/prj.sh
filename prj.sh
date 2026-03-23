@@ -8,7 +8,7 @@ PROJ_PATH="${PROJ_PATH:-${HOME}/projets}"
 unique_name() {
   local base="$1"
   local candidate="$base"
-  local i=1
+  local i=2
   while [[ -d "$PROJ_PATH/$candidate" ]]; do
     candidate="${base}-$i"
     ((i++))
@@ -16,19 +16,27 @@ unique_name() {
   echo "$candidate"
 }
 
-get_modified_epoch() {
-  local dir="$1"
-
-  # Search for the git file (if exists), to sort projects by recents update.
-  # get COMMIT_EDITMSG is updated when PULL/COMMIT/CHECKOUT/Fetch.
-  # If the folder is not a git project then fall back to the folder him self.
-  if [[ -d "$dir/.git" ]]; then
-    find "$dir/.git/refs" "$dir/.git/COMMIT_EDITMSG" -type f \
-      -printf '%T@\n' 2>/dev/null | sort -rn | head -n1 | cut -d. -f1
-  else
-    stat -c %Y "$dir" 2>/dev/null
-  fi
-}
+# Depending of the OS, stat has different syntax. 
+# This function abstracts that away and returns the most recent modification epoch for a project dir (considering .git if present).
+if stat --version >/dev/null 2>&1; then
+  get_modified_epoch() {
+    local dir="$1"
+    if [[ -d "$dir/.git" ]]; then
+      stat -c %Y "$dir/.git/refs" "$dir/.git/COMMIT_EDITMSG" 2>/dev/null | sort -rn | head -n1
+    else
+      stat -c %Y "$dir" 2>/dev/null
+    fi
+  }
+else
+  get_modified_epoch() {
+    local dir="$1"
+    if [[ -d "$dir/.git" ]]; then
+      stat -f %m "$dir/.git/refs" "$dir/.git/COMMIT_EDITMSG" 2>/dev/null | sort -rn | head -n1
+    else
+      stat -f %m "$dir" 2>/dev/null
+    fi
+  }
+fi
 
 epoch_to_age() {
   local mod_epoch="$1"
