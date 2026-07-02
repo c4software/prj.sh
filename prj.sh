@@ -218,7 +218,7 @@ selector() {
       --footer="Enter: cd  |  Ctrl-O: open  |  Ctrl-E: opencode  |  Ctrl-A: claude  |  Ctrl-N: new" \
       --expect=enter,ctrl-o,ctrl-e,ctrl-a,ctrl-n \
       --query="$query" \
-      --preview='dir={1}; if [[ ! -d "$dir" ]]; then echo "(new project)"; else readme=$(find "$dir" -maxdepth 1 -iname "readme*" -type f 2>/dev/null | head -1); if [[ -n "$readme" ]]; then cat "$readme"; else ls --color=always -lAh --group-directories-first "$dir"; fi; fi' \
+      --preview='dir={1}; if [[ ! -d "$dir" ]]; then echo "(new project)"; else readme=$(find "$dir" -maxdepth 1 -iname "readme*" -type f 2>/dev/null | head -1); if [[ -n "$readme" ]]; then if command -v bat >/dev/null 2>&1; then bat --style=plain --color=always "$readme"; else cat "$readme"; fi; else ls --color=always -lAh --group-directories-first "$dir"; fi; fi' \
       --preview-window=down:5:wrap)
 
   local key selected
