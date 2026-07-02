@@ -62,7 +62,7 @@ collect_projects() {
   local full subdirs
   while IFS= read -r full; do
     [[ -z "$full" ]] && continue
-    if find "$full" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | grep -q .; then
+    if find "$full" -mindepth 1 -maxdepth 1 -type f -not -name '.*' 2>/dev/null | grep -q .; then
       echo "$full"
     else
       subdirs=$(find "$full" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
@@ -172,14 +172,16 @@ selector() {
 
   local user_selection
   user_selection=$(printf "%s\n" "${choices[@]}" |
-    fzf --ansi --reverse --height=15 \
+    fzf --ansi --reverse --height=30 \
       --with-nth=2.. \
       --delimiter=$'\t' \
       --prompt="Select a project: " \
       --header="$(printf '%d projects in %s' "$((${#choices[@]} - 1))" "$PROJ_PATH")" \
-      --footer="Enter: cd  |  Ctrl-O: open  |  Ctrl-C: code  |  Ctrl-E: opencode  |  Ctrl-A: claude  |  Ctrl-N: new" \
-      --expect=enter,ctrl-o,ctrl-c,ctrl-e,ctrl-a,ctrl-n \
-      --query="$query")
+      --footer="Enter: cd  |  Ctrl-O: open  |  Ctrl-E: opencode  |  Ctrl-A: claude  |  Ctrl-N: new" \
+      --expect=enter,ctrl-o,ctrl-e,ctrl-a,ctrl-n \
+      --query="$query" \
+      --preview='[[ -d {1} ]] && ls --color=always -lAh --group-directories-first {1} || echo "(new project)"' \
+      --preview-window=down:5:wrap)
 
   local key selected
   key=$(echo "$user_selection" | head -n1)
@@ -199,8 +201,7 @@ selector() {
   case "$key" in
   enter) run_action cd "$full_path" ;;
   ctrl-o) run_action open "$full_path" ;;
-  ctrl-c) run_action code "$full_path" ;;
-  ctrl-e) run_action opencode "$full_path" ;;
+ctrl-e) run_action opencode "$full_path" ;;
   ctrl-a) run_action claude "$full_path" ;;
   esac
 }
@@ -339,7 +340,6 @@ cmd_help() {
   ACTIONS (keyboard shortcuts in the selector):
     Enter      → cd into the project directory
     Ctrl-O     → open directory (Finder / file manager)
-    Ctrl-C     → open in VS Code
     Ctrl-E     → open with opencode
     Ctrl-A     → open with claude
     Ctrl-N     → create a new project
