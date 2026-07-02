@@ -20,6 +20,7 @@ Tired of `cd`-ing through endless directory trees to find your projects?
 **prj.sh** helps you navigate and manage your project folders with ease:
 
 - **Instant fuzzy search** via [`fzf`](https://github.com/junegunn/fzf)
+- **Autojump-style navigation** — `proj <query>` jumps directly to the first match, no picker needed
 - **Smart age display** (days, weeks, months)
 - **Multiple editor integrations** (VS Code, OpenCode, Claude)
 - **Quick project cloning** via Git (auto-detects Git URLs)
@@ -53,7 +54,7 @@ echo 'eval "$(~/.local/bin/proj init)"' >> ~/.zshrc # or ~/.bashrc
 
 ```bash
 proj                           # Browse and open projects interactively
-proj <query>                   # Search for a matching directory or create it
+proj <query>                   # Jump directly to first matching project (autojump-style)
 proj <git-url>                 # Clone a git repository (auto-detects URL)
 proj new [name]                # Create a new project folder
 proj clone <uri> [name]        # Clone a git repository into PROJ_PATH
@@ -65,7 +66,7 @@ proj --help                    # Show help
 Examples:
 
 ```bash
-proj redis
+proj redis          # → jumps directly to the most recently used project matching "redis"
 proj new my-app
 proj https://github.com/c4software/prj.sh          # Auto-detects Git URL
 proj clone https://github.com/c4software/prj.sh
@@ -78,13 +79,18 @@ proj list
 
 ```bash
 $ proj redis
+# → jumps directly into ~/projets/redis (most recently modified match)
+
+$ proj
+# Opens the interactive fzf picker:
 → redis                          2d ago
   redis-cache                    1w ago
   redis-test                     2w ago
   ➕ Create new
 ```
 
-Press <kbd>Enter</kbd> to `cd` into the project, or use keyboard shortcuts for other actions.
+With a query, `proj` behaves like `z`/`autojump`: it picks the most recently modified matching project and jumps straight in.
+Without a query, press <kbd>Enter</kbd> to `cd` into the selected project, or use keyboard shortcuts for other actions.
 
 ---
 

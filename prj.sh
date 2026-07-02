@@ -328,7 +328,7 @@ cmd_help() {
 
   USAGE:
     proj                        # Open project selector
-    proj <query>                # Filter projects by name
+    proj <query>                # Jump to first matching project (autojump-style)
     proj <git-url>              # Clone a git repo directly
     proj new [name]             # Create a new project folder
     proj clone <uri> [name]     # Clone a git repo (explicit)
