@@ -56,23 +56,61 @@ epoch_to_age() {
   fi
 }
 
-# Returns the list of project dirs to show.
-# If a dir contains only subdirs (no files), expand it one level.
+# Returns the list of leaf project dirs to display in the selector.
+#
+# Traversal strategy: breadth-first queue, up to 2 levels deep.
+# Each queue entry is "path:remaining_depth".
+#
+# For each dir we encounter:
+#   - Has visible files (non-hidden) → it's a project, emit it.
+#   - No visible files + has subdirs + depth remaining → push subdirs onto queue.
+#   - No visible files + no subdirs (or depth exhausted) → emit as-is (empty leaf).
+#
+# Why globs instead of `find | grep -q`:
+#   find+grep spawns 2 processes per directory. Globs run in the current shell,
+#   which is significantly faster when scanning many directories.
+#
+# Why iterative (index-based) instead of recursive:
+#   Each recursive call in bash forks a subshell. An index walk over an array
+#   avoids that overhead entirely.
 collect_projects() {
-  local full subdirs
-  while IFS= read -r full; do
-    [[ -z "$full" ]] && continue
-    if find "$full" -mindepth 1 -maxdepth 1 -type f -not -name '.*' 2>/dev/null | grep -q .; then
-      echo "$full"
+  local -a queue=()
+  local item dir depth f found sub
+
+  # Seed the queue with top-level dirs, each at full depth (2).
+  while IFS= read -r dir; do
+    [[ -n "$dir" ]] && queue+=("$dir:2")
+  done < <(find "$PROJ_PATH" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+
+  local i=0
+  while ((i < ${#queue[@]})); do
+    item="${queue[i++]}"
+    dir="${item%:*}"
+    depth="${item##*:}"
+
+    # Glob `dir/*` matches only non-hidden entries; check for at least one file.
+    found=0
+    for f in "$dir"/*; do
+      [[ -f "$f" ]] && { found=1; break; }
+    done
+
+    if ((found)); then
+      echo "$dir"
     else
-      subdirs=$(find "$full" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
-      if [[ -n "$subdirs" ]]; then
-        echo "$subdirs"
+      # Collect subdirs via trailing-slash glob (no `find` subprocess).
+      local -a subdirs=()
+      for f in "$dir"/*/; do
+        [[ -d "$f" ]] && subdirs+=("${f%/}")
+      done
+      if [[ ${#subdirs[@]} -eq 0 ]] || ((depth <= 0)); then
+        echo "$dir"
       else
-        echo "$full"
+        for sub in "${subdirs[@]}"; do
+          queue+=("$sub:$((depth - 1))")
+        done
       fi
     fi
-  done < <(find "$PROJ_PATH" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+  done
 }
 
 # === Check projects dir exists ===
@@ -180,7 +218,7 @@ selector() {
       --footer="Enter: cd  |  Ctrl-O: open  |  Ctrl-E: opencode  |  Ctrl-A: claude  |  Ctrl-N: new" \
       --expect=enter,ctrl-o,ctrl-e,ctrl-a,ctrl-n \
       --query="$query" \
-      --preview='[[ -d {1} ]] && ls --color=always -lAh --group-directories-first {1} || echo "(new project)"' \
+      --preview='dir={1}; if [[ ! -d "$dir" ]]; then echo "(new project)"; else readme=$(find "$dir" -maxdepth 1 -iname "readme*" -type f 2>/dev/null | head -1); if [[ -n "$readme" ]]; then cat "$readme"; else ls --color=always -lAh --group-directories-first "$dir"; fi; fi' \
       --preview-window=down:5:wrap)
 
   local key selected
