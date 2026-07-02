@@ -160,6 +160,14 @@ selector() {
     return 1
   fi
 
+  # autojump-style: with a query, jump directly to the first (most recent) match
+  if [[ -n "$query" ]] && [[ ${#choices[@]} -gt 0 ]]; then
+    local first_path
+    first_path=$(echo "${choices[0]}" | cut -f1)
+    run_action cd "$first_path"
+    return
+  fi
+
   choices+=("NEW	+ New project	")
 
   local user_selection
